@@ -1,0 +1,8 @@
+@import "tailwindcss";
+
+@theme {
+  --color-cgv-red: #e51937;
+  --color-cgv-gray-light: #f0f0f0;
+  --color-cgv-gray-dark: #888;
+  --color-cgv-text: #666;
+}
