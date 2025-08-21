@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Home,
   Ticket,
@@ -234,7 +234,12 @@ const MainContent = ({ onNavigate }) => (
         <button className="px-4 py-2 text-lg font-bold border-b-2 border-black">
           영화
         </button>
-        <button className="px-4 py-2 text-lg text-gray-500">이벤트/혜택</button>
+        <button
+          className="px-4 py-2 text-lg text-gray-500 hover:text-black"
+          onClick={() => window.location.assign("/event")}
+        >
+          이벤트/혜택
+        </button>
       </div>
       <div className="mt-4 flex justify-between items-center">
         <div className="flex items-center space-x-4 text-sm">
@@ -260,13 +265,13 @@ const MainContent = ({ onNavigate }) => (
         />
         <MovieCard
           rank={2}
-          title="좀비딸"
+          title="귀멸의 칼날"
           imgSrc="/images/f12.webp"
           onBook={() => onNavigate("seatSelection")}
         />
         <MovieCard
           rank={3}
-          title="범죄도시4"
+          title="좀비딸"
           imgSrc="/images/f123.webp"
           onBook={() => onNavigate("seatSelection")}
         />
@@ -463,29 +468,108 @@ const SeatSelectionPage = ({ onNavigate }) => {
   );
 };
 
+const EventBenefitsPage = ({ onNavigate }) => (
+  <div className="w-full h-full flex flex-col bg-white">
+    {/* 상단 아이콘 헤더 */}
+    <header className="p-4 flex justify-end items-center space-x-5 border-b flex-shrink-0">
+      <button>
+        <Gift size={22} />
+      </button>
+      <button>
+        <Bell size={22} />
+      </button>
+      <button>
+        <Search size={22} />
+      </button>
+    </header>
+
+    <div className="p-6 flex-grow overflow-y-auto">
+      {/* 탭 바: 이벤트/혜택 활성화 */}
+      <div className="flex items-center border-b">
+        <button
+          className="px-4 py-2 text-lg text-gray-500 hover:text-black"
+          onClick={() => onNavigate("main")}
+        >
+          영화
+        </button>
+        <button className="px-4 py-2 text-lg font-bold border-b-2 border-black">
+          이벤트/혜택
+        </button>
+      </div>
+
+      {/* 본문: 버튼 하나 */}
+      <div className="w-full flex items-center justify-center py-24">
+        <button
+          className="bg-cgv-red text-white font-bold px-6 py-3 rounded-md"
+          onClick={() => alert("이벤트 참여가 완료되었습니다!")}
+        >
+          참여하기
+        </button>
+      </div>
+    </div>
+  </div>
+);
+
 // --- 최종 App 컴포넌트 (Shell) ---
 export default function CgvClone() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [currentPage, setCurrentPage] = useState("main");
+
+  // 경로 기반 초기 페이지 결정
+  const path = typeof window !== "undefined" ? window.location.pathname : "/";
+  const initialPage =
+    path === "/seat" ? "seatSelection" : path === "/event" ? "event" : "main";
+
+  const [currentPage, setCurrentPage] = useState(initialPage);
+
+  // URL과 state를 함께 바꾸는 내비게이터
+  const navigate = (page) => {
+    setCurrentPage(page);
+    const nextPath =
+      page === "event" ? "/event" : page === "seatSelection" ? "/seat" : "/";
+    if (
+      typeof window !== "undefined" &&
+      window.location.pathname !== nextPath
+    ) {
+      window.history.pushState({ page }, "", nextPath);
+    }
+  };
+
+  // 브라우저 뒤로가기/앞으로가기 대응
+  useEffect(() => {
+    const onPop = () => {
+      const p = window.location.pathname;
+      if (p === "/event") setCurrentPage("event");
+      else if (p === "/seat") setCurrentPage("seatSelection");
+      else setCurrentPage("main");
+    };
+    window.addEventListener("popstate", onPop);
+    return () => window.removeEventListener("popstate", onPop);
+  }, []);
 
   const handleLogin = (id, password) => {
     if (id === "test" && password === "1234") {
       setIsLoggedIn(true);
-      setCurrentPage("main");
+      navigate("main");
     } else {
       alert("아이디 또는 비밀번호가 일치하지 않습니다.");
     }
   };
 
   const renderContent = () => {
-    if (!isLoggedIn) {
-      return <LoginContent onLoginAttempt={handleLogin} />;
-    }
+    // if (!isLoggedIn) {
+    //   return <LoginContent onLoginAttempt={handleLogin} />;
+    // }
     switch (currentPage) {
+      // case "main":
+      //   return <MainContent onNavigate={setCurrentPage} />;
       case "main":
-        return <MainContent onNavigate={setCurrentPage} />;
+        return <MainContent onNavigate={navigate} />;
+      // case "seatSelection":
+      //   return <SeatSelectionPage onNavigate={setCurrentPage} />;
       case "seatSelection":
-        return <SeatSelectionPage onNavigate={setCurrentPage} />;
+        return <SeatSelectionPage onNavigate={navigate} />;
+      case "event":
+        return <EventBenefitsPage onNavigate={navigate} />;
       default:
         return <MainContent onNavigate={setCurrentPage} />;
     }
